@@ -1,4 +1,4 @@
-# Coding test scaffold
+# Scaffold for Django/DRF API with React
 
 Django REST Framework backend + React (Vite/TS) frontend, run locally side by side. SQLite database, no Docker required for local dev.
 
