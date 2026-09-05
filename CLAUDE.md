@@ -12,9 +12,12 @@ backend/            Django project
   tasks/            the one app so far — models, serializers, views, urls, tests.py
   venv/             local virtualenv — never read, grep, or edit inside here
   db.sqlite3        gitignored, local only
-frontend/           Vite + React 19 + TypeScript
+frontend/           Vite + React 19 + TypeScript, styled with Tailwind CSS + shadcn/ui
   src/App.tsx       main list/add/toggle/delete UI
   src/api.ts        API client, points at http://127.0.0.1:8000/api
+  src/components/ui/  shadcn/ui components (generated — see Conventions)
+  src/lib/          utils.ts (shadcn's cn helper re-export), version.ts (reads package.json)
+  components.json   shadcn/ui CLI config
   node_modules/     never read, grep, or edit inside here
 ```
 
@@ -71,3 +74,5 @@ This repo tracks work as GitHub issues (`gh issue list` / `gh issue view <n>`).
 - Keep the plan doc and the PR description in sync — the plan is the source of truth for *why*, the PR diff for *what*.
 - Match existing style: DRF `ModelViewSet` + router for backend endpoints (see `tasks/views.py` + `tasks/urls.py`); functional React components with hooks on the frontend.
 - CORS is restricted to `localhost:5173` / `127.0.0.1:5173` in `backend/config/settings.py` — update `CORS_ALLOWED_ORIGINS` there if the frontend port ever changes, and call it out in the PR if you do.
+- **Backend: annotate class attributes.** New and touched classes should carry PEP 526 variable annotations on their class-level attributes — Django model fields (`title: models.CharField[str] = models.CharField(...)`), `Meta`/config attributes (`name: str = "tasks"`), and viewset/serializer attributes (`queryset: QuerySet[Task] = ...`, `serializer_class: type[TaskSerializer] = ...`). Add `from __future__ import annotations` to any file that subscripts a Django field or model type this way, since Django's field classes aren't runtime-subscriptable. No mypy/django-stubs is configured, so this is for readability, not enforced — but keep it consistent with `tasks/models.py`, `tasks/serializers.py`, `tasks/views.py`, and `tasks/apps.py`.
+- **Frontend styling: Tailwind CSS + shadcn/ui.** Utility classes via Tailwind v4 (wired through `@tailwindcss/vite` in `vite.config.ts`); components come from shadcn/ui's CLI (`npx shadcn@latest add <component>`), which drops generated files into `src/components/ui/` — treat those as vendored (don't hand-edit their structure) so future `shadcn add` updates stay clean. The `@/*` import alias points at `src/` (configured in `tsconfig.json`/`tsconfig.app.json` and `vite.config.ts`). `react/only-export-components` is disabled for `src/components/ui/**` in `.oxlintrc.json` since shadcn's generated files intentionally export a `cva` variants function alongside the component.
