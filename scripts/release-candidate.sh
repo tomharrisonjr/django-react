@@ -1,21 +1,28 @@
 #!/usr/bin/env bash
-# Bumps semver, merges the current branch's PR, tags main, and publishes a GitHub release.
-# Usage: release-candidate.sh <major|minor|patch>
+# Bumps semver, updates frontend/package.json to match, merges the current
+# branch's PR, tags main, and publishes a GitHub release.
+# Usage: release-candidate.sh [major|minor|patch]  (defaults to patch)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT"
 
-BUMP="${1:-}"
+BUMP="${1:-patch}"
 if [[ "$BUMP" != "major" && "$BUMP" != "minor" && "$BUMP" != "patch" ]]; then
-  echo "usage: $(basename "$0") <major|minor|patch>" >&2
+  echo "usage: $(basename "$0") [major|minor|patch]" >&2
   exit 1
 fi
 
 BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 if [[ "$BRANCH" == "main" ]]; then
   echo "error: run this from the feature branch whose PR you want to release, not main" >&2
+  exit 1
+fi
+
+if [[ -n "$(git status --porcelain)" ]]; then
+  echo "error: you have uncommitted changes — commit or stash them before releasing" >&2
+  git status --short
   exit 1
 fi
 
@@ -50,11 +57,19 @@ else
   echo "==> Bumping $LATEST_TAG -> $NEW_TAG ($BUMP)"
 fi
 
-read -r -p "Merge PR #$PR_NUMBER \"$PR_TITLE\" and release as $NEW_TAG? [y/N] " CONFIRM
+VERSION_NO_V="${NEW_TAG#v}"
+
+read -r -p "Bump frontend to $VERSION_NO_V, merge PR #$PR_NUMBER \"$PR_TITLE\", and release as $NEW_TAG? [y/N] " CONFIRM
 if [[ "$CONFIRM" != "y" && "$CONFIRM" != "Y" ]]; then
   echo "Aborted."
   exit 1
 fi
+
+echo "==> Bumping frontend/package.json to $VERSION_NO_V"
+( cd "$REPO_ROOT/frontend" && npm version "$VERSION_NO_V" --no-git-tag-version --allow-same-version >/dev/null )
+git add frontend/package.json frontend/package-lock.json
+git commit -m "chore: bump frontend version to $VERSION_NO_V"
+git push origin "$BRANCH"
 
 gh pr merge "$PR_NUMBER" --squash --delete-branch
 
