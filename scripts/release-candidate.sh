@@ -7,10 +7,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT"
 
-# default, patch, -h or --help
-BUMP="${1:-"patch"}"
-if [[ "$BUMP" != "major" && "$BUMP" != "minor" && "$BUMP" != "patch" ]] || [[ "$BUMP" == "-h" ]] || [[ "$BUMP" == "--help" ]]; then
-  echo "usage: $(basename "$0") <major|minor|patch (default:patch)>" >&2
+BUMP="${1:-}"
+if [[ "$BUMP" != "major" && "$BUMP" != "minor" && "$BUMP" != "patch" ]]; then
+  echo "usage: $(basename "$0") <major|minor|patch>" >&2
   exit 1
 fi
 
