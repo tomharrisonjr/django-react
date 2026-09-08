@@ -80,6 +80,12 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+        # `manage.py test` uses an in-memory database instead of db.sqlite3, so
+        # running the suite never touches (or wipes) your local dev data, even
+        # while `runserver` is up. Explicit here so it can't drift.
+        'TEST': {
+            'NAME': ':memory:',
+        },
     }
 }
 

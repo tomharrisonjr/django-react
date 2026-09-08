@@ -26,6 +26,16 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+export function getErrorMessage(err: unknown): string {
+  if (err instanceof TypeError) {
+    return `Can't reach the server at ${API_BASE}. Is the backend running?`;
+  }
+  if (err instanceof Error) {
+    return err.message;
+  }
+  return String(err);
+}
+
 export const api = {
   list: () => request<TaskList>("/tasks/"),
   create: (title: string) =>

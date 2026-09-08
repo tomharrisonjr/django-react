@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { ListTodo, Trash2 } from "lucide-react";
-import { api, type Task } from "./api";
+import { AlertCircle, ListTodo, Trash2 } from "lucide-react";
+import { api, getErrorMessage, type Task } from "./api";
+import { Alert, AlertDescription, AlertTitle } from "./components/ui/alert";
 import { Badge } from "./components/ui/badge";
 import { Button } from "./components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./components/ui/card";
@@ -17,7 +18,7 @@ function App() {
     api
       .list()
       .then((data) => setTasks(data.results))
-      .catch((err) => setError(String(err)));
+      .catch((err) => setError(getErrorMessage(err)));
   }, []);
 
   async function handleAdd(e: React.FormEvent) {
@@ -27,8 +28,9 @@ function App() {
       const task = await api.create(title.trim());
       setTasks((prev) => [task, ...prev]);
       setTitle("");
+      setError(null);
     } catch (err) {
-      setError(String(err));
+      setError(getErrorMessage(err));
     }
   }
 
@@ -36,8 +38,9 @@ function App() {
     try {
       const updated = await api.toggle(task);
       setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+      setError(null);
     } catch (err) {
-      setError(String(err));
+      setError(getErrorMessage(err));
     }
   }
 
@@ -45,8 +48,9 @@ function App() {
     try {
       await api.remove(id);
       setTasks((prev) => prev.filter((t) => t.id !== id));
+      setError(null);
     } catch (err) {
-      setError(String(err));
+      setError(getErrorMessage(err));
     }
   }
 
@@ -65,7 +69,13 @@ function App() {
             <CardTitle>Your tasks</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle />
+                <AlertTitle>Something went wrong</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
             <form onSubmit={handleAdd} className="flex gap-2">
               <Input
@@ -78,7 +88,7 @@ function App() {
 
             {tasks.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                No tasks yet — add one above.
+                {error ? "Unable to load tasks." : "No tasks yet — add one above."}
               </p>
             ) : (
               <ul className="flex flex-col divide-y divide-border">
