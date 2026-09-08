@@ -68,8 +68,12 @@ fi
 echo "==> Bumping frontend/package.json to $VERSION_NO_V"
 ( cd "$REPO_ROOT/frontend" && npm version "$VERSION_NO_V" --no-git-tag-version --allow-same-version >/dev/null )
 git add frontend/package.json frontend/package-lock.json
-git commit -m "chore: bump frontend version to $VERSION_NO_V"
-git push origin "$BRANCH"
+if git diff --cached --quiet; then
+  echo "frontend/package.json already at $VERSION_NO_V — nothing to commit, skipping push"
+else
+  git commit -m "chore: bump frontend version to $VERSION_NO_V"
+  git push origin "$BRANCH"
+fi
 
 gh pr merge "$PR_NUMBER" --squash --delete-branch
 
