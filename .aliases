@@ -1,5 +1,6 @@
 REPO_ROOT=$(git rev-parse --show-toplevel)
 SCRIPT_PATH=$REPO_ROOT/scripts
+alias setup="$SCRIPT_PATH/setup.sh"
 alias start-work="$SCRIPT_PATH/start-work.sh"
 alias finish-work="$SCRIPT_PATH/finish-work.sh"
 alias release-candidate="$SCRIPT_PATH/release-candidate.sh"

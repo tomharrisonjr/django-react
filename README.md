@@ -2,6 +2,17 @@
 
 Django REST Framework backend + React (Vite/TS) frontend, run locally side by side. SQLite database, no Docker required for local dev.
 
+## Quick start
+
+```
+scripts/setup.sh   # or `setup`, once direnv has sourced .aliases
+```
+
+Checks for python3/npm/direnv, creates `backend/venv` and installs its requirements,
+runs `npm install` in `frontend/`, and migrates the sqlite db. Afterwards it prints
+the `direnv allow` commands to run once per directory (root, `backend/`, `frontend/`)
+so each `.envrc` can auto-activate.
+
 ## Backend (Django + DRF)
 
 ```
