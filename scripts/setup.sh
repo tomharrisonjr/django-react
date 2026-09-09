@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
-# One-shot local dev setup: checks dependencies, creates the backend venv and
-# installs its requirements, installs frontend deps, migrates the sqlite db,
-# and points you at the direnv files that still need to be allowed.
+# One-shot local dev setup: checks dependencies, creates the venv for each
+# backend and installs its requirements, installs frontend deps, migrates
+# the sqlite db for each backend, and points you at the direnv files that
+# still need to be allowed.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-BACKEND_DIR="$REPO_ROOT/backend"
+DJANGO_DIR="$REPO_ROOT/backend/django"
+FLASK_DIR="$REPO_ROOT/backend/flask"
 FRONTEND_DIR="$REPO_ROOT/frontend"
 
 require_cmd() {
@@ -26,22 +28,36 @@ echo "npm: $(npm --version)"
 echo "direnv: $(direnv version)"
 echo
 
-echo "==> Backend: virtualenv + dependencies"
-if [[ ! -f "$BACKEND_DIR/venv/bin/activate" ]]; then
-  ( cd "$BACKEND_DIR" && python3 -m venv venv )
-  echo "Created $BACKEND_DIR/venv"
+echo "==> Django backend: virtualenv + dependencies"
+if [[ ! -f "$DJANGO_DIR/venv/bin/activate" ]]; then
+  ( cd "$DJANGO_DIR" && python3 -m venv venv )
+  echo "Created $DJANGO_DIR/venv"
 else
-  echo "backend/venv already exists, skipping creation"
+  echo "backend/django/venv already exists, skipping creation"
 fi
-( cd "$BACKEND_DIR" && source venv/bin/activate && pip install -r requirements-dev.txt )
+( cd "$DJANGO_DIR" && source venv/bin/activate && pip install -r requirements-dev.txt )
+echo
+
+echo "==> Flask backend: virtualenv + dependencies"
+if [[ ! -f "$FLASK_DIR/venv/bin/activate" ]]; then
+  ( cd "$FLASK_DIR" && python3 -m venv venv )
+  echo "Created $FLASK_DIR/venv"
+else
+  echo "backend/flask/venv already exists, skipping creation"
+fi
+( cd "$FLASK_DIR" && source venv/bin/activate && pip install -r requirements-dev.txt )
 echo
 
 echo "==> Frontend: dependencies (npm install)"
 ( cd "$FRONTEND_DIR" && npm install )
 echo
 
-echo "==> Backend: migrating the database"
-( cd "$BACKEND_DIR" && source venv/bin/activate && python manage.py migrate )
+echo "==> Django backend: migrating the database"
+( cd "$DJANGO_DIR" && source venv/bin/activate && python manage.py migrate )
+echo
+
+echo "==> Flask backend: migrating the database"
+( cd "$FLASK_DIR" && source venv/bin/activate && FLASK_APP=wsgi.py flask db upgrade )
 echo
 
 echo "==================== Next step ===================="
@@ -49,6 +65,7 @@ echo "direnv is installed, but each .envrc still needs to be allowed once per"
 echo "directory before it will auto-activate. Run:"
 echo
 echo "  cd $REPO_ROOT && direnv allow"
-echo "  cd $BACKEND_DIR && direnv allow"
+echo "  cd $DJANGO_DIR && direnv allow"
+echo "  cd $FLASK_DIR && direnv allow"
 echo "  cd $FRONTEND_DIR && direnv allow"
 echo "====================================================="

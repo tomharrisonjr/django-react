@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Starts this app's dev server if it isn't already running, then tails its
 # log so you can watch it (pass --no-log to skip that and just exit). Run
-# from inside frontend/ to start the Vite dev server, or backend/ to start
-# Django's.
+# from inside frontend/ to start the Vite dev server, backend/django/ to
+# start Django's, or backend/flask/ to start Flask's.
 set -euo pipefail
 
 NO_LOG=false
@@ -17,7 +17,8 @@ for arg in "$@"; do
 done
 
 FRONTEND_PORT=5173
-BACKEND_PORT=8000
+DJANGO_PORT=8000
+FLASK_PORT=8001
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 CWD="$(pwd -P)"
@@ -47,24 +48,40 @@ case "$CWD" in
     fi
     tail_log "$LOG_FILE"
     ;;
-  "$REPO_ROOT/backend")
-    LOG_FILE=/tmp/backend-dev.log
-    if is_listening "$BACKEND_PORT"; then
-      echo "backend dev server already running on port $BACKEND_PORT"
+  "$REPO_ROOT/backend/django")
+    LOG_FILE=/tmp/backend-django-dev.log
+    if is_listening "$DJANGO_PORT"; then
+      echo "django dev server already running on port $DJANGO_PORT"
     else
       if [[ ! -f venv/bin/activate ]]; then
-        echo "error: backend/venv not found — run 'python -m venv venv && pip install -r requirements-dev.txt' first" >&2
+        echo "error: backend/django/venv not found — run 'python -m venv venv && pip install -r requirements-dev.txt' first" >&2
         exit 1
       fi
-      echo "==> Starting backend dev server (manage.py runserver) on port $BACKEND_PORT"
+      echo "==> Starting django dev server (manage.py runserver) on port $DJANGO_PORT"
       source venv/bin/activate
-      nohup python manage.py runserver "$BACKEND_PORT" > "$LOG_FILE" 2>&1 &
+      nohup python manage.py runserver "$DJANGO_PORT" > "$LOG_FILE" 2>&1 &
+      echo "Started (pid $!). Logs: $LOG_FILE"
+    fi
+    tail_log "$LOG_FILE"
+    ;;
+  "$REPO_ROOT/backend/flask")
+    LOG_FILE=/tmp/backend-flask-dev.log
+    if is_listening "$FLASK_PORT"; then
+      echo "flask dev server already running on port $FLASK_PORT"
+    else
+      if [[ ! -f venv/bin/activate ]]; then
+        echo "error: backend/flask/venv not found — run 'python -m venv venv && pip install -r requirements-dev.txt' first" >&2
+        exit 1
+      fi
+      echo "==> Starting flask dev server (flask run) on port $FLASK_PORT"
+      source venv/bin/activate
+      FLASK_APP=wsgi.py nohup flask run --port "$FLASK_PORT" > "$LOG_FILE" 2>&1 &
       echo "Started (pid $!). Logs: $LOG_FILE"
     fi
     tail_log "$LOG_FILE"
     ;;
   *)
-    echo "error: run this from inside frontend/ or backend/ (currently in $CWD)" >&2
+    echo "error: run this from inside frontend/, backend/django/, or backend/flask/ (currently in $CWD)" >&2
     exit 1
     ;;
 esac
