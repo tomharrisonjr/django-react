@@ -39,8 +39,11 @@ export function getErrorMessage(err: unknown): string {
 export const api = {
   list: () => request<TaskList>("/tasks/"),
   create: (title: string) =>
-    request<Task>("/tasks/", { method: "POST", body: JSON.stringify({ title }) }),
-  toggle: (task: Task) =>
+    request<Task>("/tasks/", {
+      method: "POST",
+      body: JSON.stringify({ title }),
+    }),
+  toggle: (task: Pick<Task, "id" | "done">) =>
     request<Task>(`/tasks/${task.id}/`, {
       method: "PATCH",
       body: JSON.stringify({ done: !task.done }),
