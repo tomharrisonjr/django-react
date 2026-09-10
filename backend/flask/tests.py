@@ -88,6 +88,58 @@ class TaskAPITests(unittest.TestCase):
         self.assertTrue(task.done)
         self.assertEqual(task.title, "Toggle me")
 
+    def test_partial_update_rejects_blank_title(self) -> None:
+        task = Task(title="Keep me", done=False)
+        db.session.add(task)
+        db.session.commit()
+
+        response = self.client.patch(f"/api/tasks/{task.id}/", json={"title": ""})
+
+        self.assertEqual(response.status_code, 400)
+        db.session.refresh(task)
+        self.assertEqual(task.title, "Keep me")
+
+    def test_create_task_parses_string_done_value(self) -> None:
+        response = self.client.post(
+            "/api/tasks/", json={"title": "New task", "done": "false"}
+        )
+
+        self.assertEqual(response.status_code, 201)
+        task = Task.query.one()
+        self.assertFalse(task.done)
+
+    def test_partial_update_parses_string_done_value(self) -> None:
+        task = Task(title="Toggle me", done=True)
+        db.session.add(task)
+        db.session.commit()
+
+        response = self.client.patch(
+            f"/api/tasks/{task.id}/", json={"done": "false"}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        db.session.refresh(task)
+        self.assertFalse(task.done)
+
+    def test_list_tasks_out_of_range_page_returns_404(self) -> None:
+        db.session.add(Task(title="Only task"))
+        db.session.commit()
+
+        response = self.client.get("/api/tasks/?page=2")
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_list_tasks_invalid_page_returns_404(self) -> None:
+        response = self.client.get("/api/tasks/?page=0")
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_list_tasks_empty_first_page_returns_200(self) -> None:
+        response = self.client.get("/api/tasks/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["results"], [])
+
     def test_delete_task(self) -> None:
         task = Task(title="Delete me")
         db.session.add(task)

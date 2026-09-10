@@ -88,7 +88,9 @@ function App() {
 
             {tasks.length === 0 ? (
               <p className="text-sm text-muted-foreground">
-                {error ? "Unable to load tasks." : "No tasks yet — add one above."}
+                {error
+                  ? "Unable to load tasks."
+                  : "No tasks yet — add one above."}
               </p>
             ) : (
               <ul className="flex flex-col divide-y divide-border">
